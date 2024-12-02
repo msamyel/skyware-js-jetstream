@@ -44,6 +44,11 @@ export interface JetstreamOptions<WantedCollections extends Collection = Collect
 	 * Not required if you are on Node 21.0.0 or newer, or another environment that provides a WebSocket implementation.
 	 */
 	ws?: unknown;
+    /**
+     * The binary type to use for the WebSocket connection.
+     * Specify value if you need to set the ReconnectingWebSocket's binaryType property explicitly.
+     */
+    wsBinaryType?: "arraybuffer" | undefined;
 }
 
 /**
@@ -78,10 +83,14 @@ export class Jetstream<
 	/** The WebSocket implementation to use. */
 	private wsImpl?: unknown;
 
+    /** The WebSocket binary type to use. */
+    private wsBinaryType?: "arraybuffer" | undefined;
+
 	constructor(options?: JetstreamOptions<WantedCollections>) {
 		super();
 		options ??= {};
 		if (options.ws) this.wsImpl = options.ws;
+        if (options.wsBinaryType) this.wsBinaryType = options.wsBinaryType;
 
 		if (typeof globalThis.WebSocket === "undefined" && !this.wsImpl) {
 			throw new Error(
@@ -115,6 +124,7 @@ const jetstream = new Jetstream({
 	 */
 	start() {
 		this.ws = new WebSocket(() => this.createUrl(), null, { WebSocket: this.wsImpl });
+        if (this.wsBinaryType) this.ws.binaryType = this.wsBinaryType;
 
 		this.ws.onopen = () => this.emit("open");
 		this.ws.onclose = () => this.emit("close");
